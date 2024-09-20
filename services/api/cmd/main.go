@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	rabbitmq "github.com/my/repo/services/api/messages"
+	rabbitmq "github.com/my/repo/services/rabbitmq"
 )
 
 type session struct {
@@ -14,16 +12,11 @@ type session struct {
 	Token string `json:"token"`
 }
 
-
-
 func main() {
-	rabbitmq.InitQueue()
+	rabbitmq.InitQueue("redis")
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
-
-	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	r.POST("/session", func(ctx *gin.Context) {
 		var body session
@@ -39,7 +32,7 @@ func main() {
 			return
 		}
 
-		rabbitmq.PublishMessage(context, rabbitmq.Message{Key: "redis", Value: value})
+		rabbitmq.PublishMessage("redis", rabbitmq.Message{Key: "setToken", Value: value})
 
 		ctx.JSON(200, gin.H{"id": body.ID, "token": body.Token})
 	})

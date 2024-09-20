@@ -1,89 +1,45 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"log"
-	"time"
+	"sync"
 
-	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/redis/go-redis/v9"
+	rabbitmq "github.com/my/repo/services/rabbitmq"
 )
-
-type Message struct {
-	Key   string          `json:"key"`
-	Value json.RawMessage `json:"value"`
-}
 
 type session struct {
 	ID    string `json:"id"`
 	Token string `json:"token"`
 }
 
-func waitForRabbitMQ() {
-	for {
-		conn, err := amqp.Dial("amqp://guest:guest@rabbimq_service:5672/")
-		if err == nil {
-			conn.Close()
-			break
-		}
-		log.Println("Waiting for RabbitMQ to be available...")
-		time.Sleep(2 * time.Second)
-	}
-}
-
 func main() {
-	waitForRabbitMQ()
-	ctx := context.Background()
+	messagesChan := make(chan rabbitmq.Message)
+	rabbitmq.InitQueue("redis")
+	// rabbitmq.InitQueue("respondToApi")
+	var wg sync.WaitGroup
 
-	conn, err := amqp.Dial("amqp://guest:guest@rabbimq_service:5672/")
-	if err != nil {
-		panic(err)
-	}
-	defer conn.Close()
+	// ctx := context.Background()
 
-	ch, err := conn.Channel()
-	if err != nil {
-		panic(err)
-	}
-	defer ch.Close()
+	// client := redis.NewClient(&redis.Options{
+	// 	Addr:     "redis:6379",
+	// 	Password: "",
+	// 	DB:       0,
+	// })
 
-	q, err := ch.QueueDeclare("hello", true, false, false, false, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	msgs, err := ch.Consume(q.Name, "", true, false, false, false, nil)
-	if err != nil {
-		panic(err)
-	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     "redis:6379",
-		Password: "",
-		DB:       0,
-	})
-
+	wg.Add(1)
 	go func() {
-		for d := range msgs {
-			var message Message
-			if err := json.Unmarshal(d.Body, &message); err != nil {
-				panic(err)
+		defer wg.Done()
+		var body session
+		for msg := range messagesChan {
+			if err := json.Unmarshal(msg.Value, &body); err != nil {
+				log.Println("Failed to unmarshall json")
 			}
 
-			if message.Key == "redis" {
-				var body session
-				if err := json.Unmarshal([]byte(message.Value), &body); err != nil {
-					panic(err)
-				}
-
-				if err := client.Set(ctx, body.ID, body.Token, 10*time.Minute).Err(); err != nil {
-					panic(err)
-				}
-				log.Printf("Session stored in Redis: ID=%s, Token=%s", body.ID, body.Token)
-			}
 		}
 	}()
 
-	select {}
+	rabbitmq.ConsumeMessages("redis", messagesChan)
+
+	wg.Wait()
 }
