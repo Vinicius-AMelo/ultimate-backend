@@ -1,7 +1,12 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"time"
+
 	"github.com/gin-gonic/gin"
+	"github.com/my/repo/services/api/rabbitmq"
 )
 
 type session struct {
@@ -10,20 +15,13 @@ type session struct {
 }
 
 func main() {
+	rabbitmq.InitQueue()
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	// conn, err := amqp091.Dial("amqp://guest:guest@localhost:5672/");
-	// if err != nil{
-	// 	panic(err)
-	// }
-	// defer conn.Close()
-
-	// ch, err := conn.Channel()
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// defer ch.Close()
+	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	r.POST("/session", func(ctx *gin.Context) {
 		var body session
@@ -32,6 +30,14 @@ func main() {
 			ctx.JSON(400, gin.H{"error": err.Error()})
 			return
 		}
+
+		value, err := json.Marshal(body)
+		if err != nil {
+			ctx.JSON(500, gin.H{"error": err.Error()})
+			return
+		}
+
+		rabbitmq.PublishMessage(context, rabbitmq.Message{Key: "redis", Value: value})
 
 		ctx.JSON(200, gin.H{"id": body.ID, "token": body.Token})
 	})
