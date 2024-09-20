@@ -6,8 +6,8 @@ COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
 COPY . .
-RUN go build -v -o /usr/local/bin/app ./services/api/cmd
+RUN go build -v -o /usr/local/bin/app ./services/auth/cmd
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["/usr/local/bin/app"]

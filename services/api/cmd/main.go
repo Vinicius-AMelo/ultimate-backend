@@ -6,13 +6,15 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/my/repo/services/api/rabbitmq"
+	rabbitmq "github.com/my/repo/services/api/messages"
 )
 
 type session struct {
 	ID    string `json:"id"`
 	Token string `json:"token"`
 }
+
+
 
 func main() {
 	rabbitmq.InitQueue()

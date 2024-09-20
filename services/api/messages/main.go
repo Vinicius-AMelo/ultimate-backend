@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	amqp "github.com/rabbitmq/amqp091-go"
 )
@@ -16,8 +17,21 @@ type Message struct {
 var ch *amqp.Channel
 var q amqp.Queue
 
+func waitForRabbitMQ() {
+	for {
+		conn, err := amqp.Dial("amqp://guest:guest@rabbimq_service:5672/")
+		if err == nil {
+			conn.Close()
+			break
+		}
+		log.Println("Waiting for RabbitMQ to be available...")
+		time.Sleep(2 * time.Second)
+	}
+}
+
 func InitQueue() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	waitForRabbitMQ()
+	conn, err := amqp.Dial("amqp://guest:guest@rabbimq_service:5672/")
 	if err != nil {
 		log.Fatalf("Failed to connect to RabbitMQ: %v", err)
 	}

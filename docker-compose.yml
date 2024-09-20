@@ -1,21 +1,8 @@
-version: "3.8"
-
 services:
-    api:
-        build:
-            context: .
-            dockerfile: api/Dockerfile
-        container_name: api_service
-        ports:
-            - "8080:8080"
-        depends_on:
-            - redis
-            - rabbitmq
-
     rabbitmq:
         build:
             context: .
-            dockerfile: rabbitmq/Dockerfile
+            dockerfile: services/rabbitmq/Dockerfile
         container_name: rabbimq_service
         ports:
             - "5672:5672"
@@ -28,6 +15,36 @@ services:
             - "6379:6379"
         volumes:
             - redis_data:/data
+
+    redisinsight:
+        image: redis/redisinsight:latest
+        container_name: redisinsight
+        ports:
+            - "5540:5540"
+        depends_on:
+            - redis
+
+    api:
+        build:
+            context: .
+            dockerfile: services/api/Dockerfile
+        container_name: api_service
+        ports:
+            - "8080:8080"
+        depends_on:
+            - redis
+            - rabbitmq
+
+    auth:
+        build:
+            context: .
+            dockerfile: services/auth/Dockerfile
+        container_name: auth_service
+        ports:
+            - "8081:8081"
+        depends_on:
+            - redis
+            - rabbitmq
 
 volumes:
     redis_data:
