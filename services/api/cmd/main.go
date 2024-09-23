@@ -14,6 +14,7 @@ type session struct {
 
 func main() {
 	rabbitmq.InitQueue("redis")
+	// rabbitmq.InitQueue("responseToApi")
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
