@@ -1,42 +1,20 @@
 package main
 
 import (
-	"encoding/json"
+	controllers_redis "api_service/cmd/controllers"
+	rabbitmq "api_service/cmd/rabbitmqq"
 
 	"github.com/gin-gonic/gin"
-	rabbitmq "github.com/my/repo/services/rabbitmq"
 )
 
-type session struct {
-	ID    string `json:"id"`
-	Token string `json:"token"`
-}
-
 func main() {
-	rabbitmq.InitQueue("redis")
-	// rabbitmq.InitQueue("responseToApi")
+	rabbitmq.InitQueue("to_redis")
+	rabbitmq.InitQueue("to_api")
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
-	r.POST("/session", func(ctx *gin.Context) {
-		var body session
-		err := ctx.BindJSON(&body)
-		if err != nil {
-			ctx.JSON(400, gin.H{"error": err.Error()})
-			return
-		}
-
-		value, err := json.Marshal(body)
-		if err != nil {
-			ctx.JSON(500, gin.H{"error": err.Error()})
-			return
-		}
-
-		rabbitmq.PublishMessage("redis", rabbitmq.Message{Key: "setToken", Value: value})
-
-		ctx.JSON(200, gin.H{"id": body.ID, "token": body.Token})
-	})
+	r.POST("/session", controllers_redis.POST)
 
 	if err := r.Run(":8080"); err != nil {
 		panic(err)

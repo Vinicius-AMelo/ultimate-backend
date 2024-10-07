@@ -1,13 +1,13 @@
 package main
 
 import (
+	rabbitmq "auth_service/cmd/rabbitmqq"
 	"context"
 	"encoding/json"
 	"log"
 	"sync"
 	"time"
 
-	rabbitmq "github.com/my/repo/services/rabbitmq"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -20,8 +20,10 @@ var client *redis.Client
 
 func main() {
 	messagesChan := make(chan rabbitmq.Message)
-	rabbitmq.InitQueue("redis")
-	// rabbitmq.InitQueue("respondToApi")
+	redisQueue := "to_redis"
+	apiQueue := "to_api"
+	rabbitmq.InitQueue(redisQueue)
+	rabbitmq.InitQueue(apiQueue)
 	var wg sync.WaitGroup
 
 	client = initClient()
@@ -38,7 +40,7 @@ func main() {
 		}
 	}()
 
-	rabbitmq.ConsumeMessages("redis", messagesChan)
+	rabbitmq.ConsumeMessages(redisQueue, messagesChan)
 
 	wg.Wait()
 }
@@ -54,15 +56,15 @@ func processMessages(msg rabbitmq.Message) error {
 
 	if msg.Key == "setToken" {
 		if err := setToken(context.Background(), body); err != nil {
-			rabbitmq.PublishMessage("responseToApi", rabbitmq.Message{Key: "fail", Value: json.RawMessage(err.Error())})
+			rabbitmq.PublishMessage("to_api", rabbitmq.Message{Key: "fail", Value: json.RawMessage(err.Error())}, "")
 		}
 
-		rabbitmq.PublishMessage("responseToApi", rabbitmq.Message{Key: "success", Value: json.RawMessage("")})
+		rabbitmq.PublishMessage("to_api", rabbitmq.Message{Key: "success", Value: json.RawMessage(`{"message": ""}`)}, "")
 	} else if msg.Key == "getToken" {
 		if token := getToken(context.Background(), body); token == nil {
-			rabbitmq.PublishMessage("responseToApi", rabbitmq.Message{Key: "fail", Value: json.RawMessage("invalid token")})
+			rabbitmq.PublishMessage("to_api", rabbitmq.Message{Key: "fail", Value: json.RawMessage(`{"message": ""}`)}, "")
 		} else {
-			rabbitmq.PublishMessage("responseToApi", rabbitmq.Message{Key: "success", Value: json.RawMessage(token.Val())})
+			rabbitmq.PublishMessage("to_api", rabbitmq.Message{Key: "success", Value: json.RawMessage(token.Val())}, "")
 		}
 
 	}

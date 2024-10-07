@@ -35,7 +35,7 @@ services:
             - redis
             - rabbitmq
         volumes:
-            - ./services:api
+            - ./services/api:/usr/src/app
 
     auth:
         build:
@@ -48,7 +48,7 @@ services:
             - redis
             - rabbitmq
         volumes:
-            - ./services:auth
+            - ./services/auth:/usr/src/app
 
 volumes:
     redis_data:
