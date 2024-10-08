@@ -1,0 +1,13 @@
+# .air.toml
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  bin = "tmp/main"  # Nome do binário
+  cmd = "go build -o tmp/main -buildvcs=false ./api/cmd/"  # Comando de build
+  include_ext = ["go", "tpl", "tmpl", "html"]  # Extensões a serem observadas
+  exclude_dir = ["assets", "tmp"]  # Diretórios a serem excluídos
+  watch_dir = ["."]  # Diretórios a serem monitorados
+
+[log]
+  time = true

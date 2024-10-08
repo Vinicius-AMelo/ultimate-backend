@@ -1,13 +1,4 @@
 services:
-    rabbitmq:
-        build:
-            context: .
-            dockerfile: services/rabbitmq/Dockerfile
-        container_name: rabbimq_service
-        ports:
-            - "5672:5672"
-            - "15672:15672"
-
     redis:
         image: redis:alpine
         container_name: redis_service
@@ -27,28 +18,14 @@ services:
     api:
         build:
             context: .
-            dockerfile: services/api/Dockerfile
-        container_name: api_service
+            dockerfile: Dockerfile
+        container_name: api_container
         ports:
             - "8080:8080"
         depends_on:
             - redis
-            - rabbitmq
         volumes:
-            - ./services/api:/usr/src/app
-
-    auth:
-        build:
-            context: .
-            dockerfile: services/auth/Dockerfile
-        container_name: auth_service
-        ports:
-            - "8081:8081"
-        depends_on:
-            - redis
-            - rabbitmq
-        volumes:
-            - ./services/auth:/usr/src/app
+            - .:/usr/src/app
 
 volumes:
     redis_data:
