@@ -15,6 +15,18 @@ services:
         depends_on:
             - redis
 
+    postgres:
+        image: postgres:17.0-alpine3.20
+        container_name: postgres
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_PASSWORD=vini
+            - POSTGRES_USER=vini
+            - POSTGRES_DATABASE=vini
+        volumes:
+            - ./tmp/data:/data
+
     api:
         build:
             context: .
@@ -24,6 +36,7 @@ services:
             - "8080:8080"
         depends_on:
             - redis
+            - postgres
         volumes:
             - .:/usr/src/app
 
