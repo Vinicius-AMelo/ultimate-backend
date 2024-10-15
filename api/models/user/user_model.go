@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"ultimate_backend/api/database"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 var db *sql.DB
@@ -22,7 +24,7 @@ func CreateUserTable() error {
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
 			ID SERIAL PRIMARY KEY,
-			username VARCHAR(255) NOT NULL,
+			username VARCHAR(255) NOT NULL UNIQUE,
 			password VARCHAR(255) NOT NULL,
 			first_name VARCHAR(255) NOT NULL,
 			last_name VARCHAR(255) NOT NULL
@@ -36,8 +38,12 @@ func CreateUserTable() error {
 }
 
 func InsertUser(user User) error {
-	_, err := db.Exec("INSERT INTO users (username, password, first_name, last_name) VALUES ($1, $2, $3, $4)", user.Username, user.Password, user.FirstName, user.LastName)
+	hashedPassword, err := hashPassword(user.Password)
 	if err != nil {
+		return err
+	}
+
+	if _, err := db.Exec("INSERT INTO users (username, password, first_name, last_name) VALUES ($1, $2, $3, $4)", user.Username, hashedPassword, user.FirstName, user.LastName); err != nil {
 		return err
 	}
 
@@ -46,10 +52,12 @@ func InsertUser(user User) error {
 
 func GetUsers() ([]User, error) {
 	var users []User
+
 	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
 		return nil, err
 	}
+
 	defer rows.Close()
 
 	for rows.Next() {
@@ -66,4 +74,44 @@ func GetUsers() ([]User, error) {
 	}
 
 	return users, nil
+}
+
+func GetUser(name string) (User, error) {
+	var user User
+
+	rows, err := db.Query(("SELECT FROM users WHERE username = $1"), name)
+	if err != nil {
+		return User{}, err
+	}
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var scannedUser User
+
+		if err := rows.Scan(&user.ID, &user.Username, &user.Password, &user.FirstName, &user.LastName); err != nil {
+			return User{}, err
+		}
+
+		user = scannedUser
+	}
+
+	return user, nil
+}
+
+func hashPassword(password string) (string, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", err
+	}
+
+	return string(hash), nil
+}
+
+func CheckPassword(hashedPassword []byte, password []byte) error {
+	if err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password)); err != nil {
+		return err
+	}
+
+	return nil
 }

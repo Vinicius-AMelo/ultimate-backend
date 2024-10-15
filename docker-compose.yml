@@ -27,6 +27,15 @@ services:
         volumes:
             - ./tmp/data:/data
 
+    pgadmin:
+        image: dpage/pgadmin4:latest
+        container_name: pgadmin
+        ports:
+            - "5433:80"
+        environment:
+            - PGADMIN_DEFAULT_EMAIL=vini@vini.com
+            - PGADMIN_DEFAULT_PASSWORD=vini
+
     api:
         build:
             context: .
