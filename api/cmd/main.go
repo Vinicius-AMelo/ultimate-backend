@@ -5,17 +5,15 @@ import (
 	"net/http"
 	redis_client "ultimate_backend/api/auth"
 	redisController "ultimate_backend/api/controllers/redis"
-	user_controller "ultimate_backend/api/controllers/user"
+	userController "ultimate_backend/api/controllers/user"
 	UserModel "ultimate_backend/api/models/user"
 
 	"ultimate_backend/api/database"
-
-	"github.com/gorilla/mux"
 )
 
 func main() {
 
-	r := mux.NewRouter()
+	r := http.NewServeMux()
 	log.Println("Trying to connect to redis")
 	redis_client.InitClient()
 	log.Println("Connected to redis")
@@ -29,11 +27,15 @@ func main() {
 	createTables()
 	defer db.Close()
 
-	r.HandleFunc("/session", redisController.POST).Methods(http.MethodPost)
-	r.HandleFunc("/session", redisController.GET).Methods(http.MethodGet)
+	redisHandler := &redisController.RedisHandler{}
+	userHandler := &userController.UserHandler{}
 
-	r.HandleFunc("/user", user_controller.POST).Methods(http.MethodPost)
-	r.HandleFunc("/user", user_controller.GetAll).Methods(http.MethodGet)
+	r.HandleFunc("POST /session", redisHandler.Post)
+	r.HandleFunc("GET /session", redisHandler.Get)
+
+	r.HandleFunc("POST /user", userHandler.Post)
+	r.HandleFunc("GET /user", userHandler.GetAll)
+	r.HandleFunc("POST /auth", userHandler.HandleLogin)
 
 	log.Println("Server running in port: 8080")
 	log.Fatal(http.ListenAndServe(":8080", r))

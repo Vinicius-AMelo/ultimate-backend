@@ -19,7 +19,10 @@ type response struct {
 	Token   string `json:"token"`
 }
 
-func POST(w http.ResponseWriter, r *http.Request) {
+type RedisHandler struct {
+}
+
+func (h *RedisHandler) Post(w http.ResponseWriter, r *http.Request) {
 	var session session
 
 	body, err := io.ReadAll(r.Body)
@@ -51,7 +54,7 @@ func POST(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func GET(w http.ResponseWriter, r *http.Request) {
+func (h *RedisHandler) Get(w http.ResponseWriter, r *http.Request) {
 	var session session
 
 	body, err := io.ReadAll(r.Body)
