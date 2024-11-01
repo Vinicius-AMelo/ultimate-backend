@@ -3,7 +3,6 @@ package UserModel
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"ultimate_backend/api/database"
 
 	"golang.org/x/crypto/bcrypt"
@@ -52,7 +51,7 @@ func InsertUser(user User) error {
 }
 
 func GetUsers() ([]User, error) {
-	var users []User = []User{}
+	var users []User
 
 	rows, err := db.Query("SELECT * FROM users")
 	if err != nil {
@@ -80,7 +79,6 @@ func GetUsers() ([]User, error) {
 func GetUser(email string) (User, error) {
 	var user User
 
-	log.Println("111")
 	rows, err := db.Query("SELECT * FROM users WHERE email = $1", email)
 	if err != nil {
 		return User{}, err
@@ -107,7 +105,7 @@ func GetUser(email string) (User, error) {
 // }
 
 func CheckPassword(hashedPassword []byte, password []byte) error {
-	if err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword(hashedPassword, password); err != nil {
 		return err
 	}
 

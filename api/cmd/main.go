@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
-	redis_client "ultimate_backend/api/auth"
+	redisClient "ultimate_backend/api/auth"
 	redisController "ultimate_backend/api/controllers/redis"
 	userController "ultimate_backend/api/controllers/user"
 	UserModel "ultimate_backend/api/models/user"
@@ -15,7 +15,7 @@ func main() {
 
 	r := http.NewServeMux()
 	log.Println("Trying to connect to redis")
-	redis_client.InitClient()
+	redisClient.InitClient()
 	log.Println("Connected to redis")
 
 	log.Println("Trying to connect to postgres")
@@ -42,5 +42,7 @@ func main() {
 }
 
 func createTables() {
-	UserModel.CreateUserTable()
+	if err := UserModel.CreateUserTable(); err != nil {
+		log.Println("Failed to create users table")
+	}
 }

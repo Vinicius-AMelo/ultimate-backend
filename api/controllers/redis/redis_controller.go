@@ -47,9 +47,9 @@ func (h *RedisHandler) Post(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	if erro := json.NewEncoder(w).Encode(response{Message: "Token created", Token: token}); erro != nil {
+	if err := json.NewEncoder(w).Encode(response{Message: "Token created", Token: token}); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(erro.Error()))
+		w.Write([]byte(err.Error()))
 		return
 	}
 }
